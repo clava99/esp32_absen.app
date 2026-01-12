@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h1>Attendance Dashboard</h1>
+        <a href="{% url 'generate_qr' %}" style="text-decoration: none;">
+            <button style="width: auto; padding: 0.5rem 1rem;">Generate New QR</button>
+        </a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Employee</th>
+                <th>ID</th>
+                <th>Status</th>
+                <th>Note</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in attendance_list %}
+            <tr>
+                <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                <td>{{ log.employee.name }}</td>
+                <td>{{ log.employee.employee_id }}</td>
+                <td>
+                    <span class="status-badge {% if log.status == 'SUCCESS' %}status-success{% else %}status-failed{% endif %}">
+                        {{ log.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ log.note }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary);">No attendance records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Simple auto-refresh every 5 seconds to see new scans
+    setTimeout(function(){
+       location.reload();
+    }, 5000);
+</script>
+{% endblock %}

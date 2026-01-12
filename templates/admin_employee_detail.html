@@ -1,0 +1,120 @@
+{% extends 'base.html' %} {% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="glass-panel rounded-2xl p-8 mb-8 shadow-sm">
+    <div class="flex flex-col md:flex-row justify-between items-center">
+      <div>
+        <div
+          class="text-sm text-slate-400 font-medium uppercase tracking-wider mb-1"
+        >
+          Detail Karyawan
+        </div>
+        <h1 class="text-3xl font-bold text-slate-800">{{ employee.name }}</h1>
+        <p class="text-slate-500 mt-1 flex items-center">
+          <span class="mr-3">{{ employee.department }}</span>
+          <span
+            class="font-mono bg-slate-100 px-2 py-0.5 rounded text-sm text-slate-600"
+            >{{ employee.employee_id }}</span
+          >
+        </p>
+      </div>
+      <div class="mt-4 md:mt-0">
+        <a
+          href="{% url 'admin_dashboard' %}"
+          class="inline-flex items-center text-slate-500 hover:text-slate-800 font-medium transition-colors"
+        >
+          <svg
+            class="h-5 w-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            ></path>
+          </svg>
+          Kembali ke Dashboard
+        </a>
+      </div>
+    </div>
+
+    <div class="mt-6 pt-6 border-t border-slate-100 flex gap-8">
+      <div>
+        <div
+          class="text-xs text-slate-400 uppercase tracking-widest font-semibold"
+        >
+          Total Kehadiran
+        </div>
+        <div class="text-2xl font-bold text-brand-600">{{ total_present }}</div>
+      </div>
+      <div>
+        <div
+          class="text-xs text-slate-400 uppercase tracking-widest font-semibold"
+        >
+          Status Saat Ini
+        </div>
+        <div class="text-lg font-medium text-slate-700">See Dashboard</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <div
+    class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
+  >
+    <div class="px-6 py-4 border-b border-slate-50">
+      <h3 class="font-bold text-lg text-slate-800">Riwayat Absensi Lengkap</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-slate-600">
+        <thead
+          class="bg-slate-50 text-xs uppercase font-semibold text-slate-500"
+        >
+          <tr>
+            <th class="px-6 py-4">Waktu Scan</th>
+            <th class="px-6 py-4">Tipe / Status</th>
+            <th class="px-6 py-4">Catatan</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for log in attendance_list %}
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4 font-medium text-slate-900">
+              {{ log.timestamp|date:"d F Y" }}
+              <span class="text-slate-400 ml-1"
+                >{{ log.timestamp|date:"H:i:s" }}</span
+              >
+            </td>
+            <td class="px-6 py-4">
+              {% if log.status == 'SUCCESS' %}
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+              >
+                Berhasil
+              </span>
+              {% else %}
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+              >
+                Gagal
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-slate-500">{{ log.note|default:"-" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="px-6 py-12 text-center text-slate-400">
+              Belum ada riwayat absensi.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
