@@ -1,0 +1,44 @@
+/* Modern Minimalist Style for "Dashboard Monitoring" Button */
+a[href="/dashboard/"] {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    
+    /* Modern Red Gradient */
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); 
+    
+    /* Typography */
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+    text-decoration: none;
+    
+    /* Shape & Box Model */
+    padding: 10px 20px !important;
+    border-radius: 8px; /* Slightly rounded, clean look */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* Minimalist Shadow */
+    box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.2), 
+                0 2px 4px -1px rgba(225, 29, 72, 0.1);
+    
+    /* Transitions */
+    transition: all 0.2s ease-in-out;
+    
+    /* Positioning adjustment */
+    margin-top: 2px;
+}
+
+a[href="/dashboard/"]:hover {
+    /* Slightly darker on hover */
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(225, 29, 72, 0.3), 
+                0 4px 6px -2px rgba(225, 29, 72, 0.15);
+}
+
+a[href="/dashboard/"]:active {
+     transform: translateY(0);
+}

@@ -1,0 +1,5 @@
+django
+djangorestframework
+qrcode
+pillow
+django-jazzmin
