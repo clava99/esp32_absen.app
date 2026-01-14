@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 from .models import Employee, QRCode, Attendance
 
 # --- Views for Web Frontend ---
@@ -213,47 +214,48 @@ def validate_scan(request):
         return Response({'status': 'FAIL', 'message': 'No token provided'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        # Try to find the QR code
-        qr_obj = QRCode.objects.get(token=token)
-        employee = qr_obj.employee
-        
-        if qr_obj.is_used:
-            # Record failed attempt (Duplicate)
-            Attendance.objects.create(
-                employee=employee,
-                qr_code=qr_obj,
-                status='FAILED',
-                note='QR Code already used'
-            )
-            return Response({'status': 'FAIL', 'message': 'QR Code already used'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if timezone.now() > qr_obj.expires_at:
-            # Record failed attempt (Expired)
-            Attendance.objects.create(
-                employee=employee,
-                qr_code=qr_obj,
-                status='FAILED',
-                note='QR Code expired'
-            )
-            return Response({'status': 'FAIL', 'message': 'QR Code expired'}, status=status.HTTP_400_BAD_REQUEST)
+        # Use a transaction and lock the QR row to avoid race conditions
+        with transaction.atomic():
+            qr_obj = QRCode.objects.select_for_update().get(token=token)
+            employee = qr_obj.employee
 
-        # Success flow
-        qr_obj.is_used = True
-        qr_obj.save()
-        
-        Attendance.objects.create(
-            employee=employee,
-            qr_code=qr_obj,
-            status='SUCCESS',
-            note='Attendance recorded'
-        )
-        
-        return Response({
-            'status': 'SUCCESS',
-            'message': f'Welcome, {employee.name}',
-            'employee': employee.name,
-            'time': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
+            if qr_obj.is_used:
+                # Record failed attempt (Duplicate)
+                Attendance.objects.create(
+                    employee=employee,
+                    qr_code=qr_obj,
+                    status='FAILED',
+                    note='QR Code already used'
+                )
+                return Response({'status': 'FAIL', 'message': 'QR Code already used'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if timezone.now() > qr_obj.expires_at:
+                # Record failed attempt (Expired)
+                Attendance.objects.create(
+                    employee=employee,
+                    qr_code=qr_obj,
+                    status='FAILED',
+                    note='QR Code expired'
+                )
+                return Response({'status': 'FAIL', 'message': 'QR Code expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Success flow: mark used and save attendance
+            qr_obj.is_used = True
+            qr_obj.save()
+
+            Attendance.objects.create(
+                employee=employee,
+                qr_code=qr_obj,
+                status='SUCCESS',
+                note='Attendance recorded'
+            )
+
+            return Response({
+                'status': 'SUCCESS',
+                'message': f'Welcome, {employee.name}',
+                'employee': employee.name,
+                'time': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
 
     except QRCode.DoesNotExist:
         # Unknown QR

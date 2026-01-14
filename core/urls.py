@@ -19,7 +19,7 @@ from django.urls import path, include
 from core.views import custom_logout
 
 urlpatterns = [
+    path('', include('attendance.urls')),
     path('admin/logout/', custom_logout),
     path('admin/', admin.site.urls),
-    path('', include('attendance.urls')),
 ]
