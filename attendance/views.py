@@ -13,10 +13,10 @@ from .models import Employee, QRCode, Attendance
 
 # --- Views for Web Frontend ---
 
-def index(request):
-    if request.session.get('employee_id'):
-        return redirect('employee_dashboard')
-    return redirect('employee_login')
+# def index(request):
+#     if request.session.get('employee_id'):
+#         return redirect('employee_dashboard')
+#     return redirect('employee_login')
 
 def employee_login(request):
     if request.method == 'POST':
@@ -59,26 +59,57 @@ def employee_dashboard(request):
 # --- Admin Views ---
 
 def admin_login_view(request):
+    next_url = request.GET.get('next')
     if request.user.is_authenticated and request.user.is_staff:
+        if next_url:
+            return redirect(next_url)
         return redirect('admin_dashboard')
         
     if request.method == 'POST':
         from django.contrib.auth import authenticate, login
         u = request.POST.get('username')
         p = request.POST.get('password')
+        next_post = request.POST.get('next')
+
         user = authenticate(request, username=u, password=p)
         if user is not None and user.is_staff:
             login(request, user)
+            if next_post:
+                return redirect(next_post)
             return redirect('admin_dashboard')
         else:
-            return render(request, 'login_admin.html', {'error': 'Username atau password salah.'})
+            return render(request, 'login_admin.html', {'error': 'Username atau password salah.', 'next': next_post})
+
+    return render(request, 'login_admin.html', {'next': next_url})
+
+def admin_login_views(request):
+    next_url = request.GET.get('next')
+    if request.user.is_authenticated and request.user.is_staff:
+        if next_url:
+            return redirect(next_url)
+        return redirect('admin_dashboard')
+        
+    if request.method == 'POST':
+        from django.contrib.auth import authenticate, login
+        u = request.POST.get('username')
+        p = request.POST.get('password')
+        next_post = request.POST.get('next')
+
+        user = authenticate(request, username=u, password=p)
+        if user is not None and user.is_staff:
+            login(request, user)
+            if next_post:
+                return redirect(next_post)
+            return redirect('admin_dashboard')
+        else:
+            return render(request, 'login_admin.html', {'error': 'Username atau password salah.', 'next': next_post})
 
     return render(request, 'login_admin.html')
 
 def admin_logout_view(request):
     from django.contrib.auth import logout
     logout(request)
-    return redirect('admin_login')
+    return redirect('employee_login')
 
 from django.db.models import Min, Max, Count
 from django.utils import timezone
@@ -202,6 +233,10 @@ def generate_qr_page(request):
 
 # --- REST API for ESP32 ---
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 @api_view(['POST'])
 def validate_scan(request):
     """
@@ -211,15 +246,18 @@ def validate_scan(request):
     token = request.data.get('qr_token')
     
     if not token:
+        logger.warning("validate_scan: No token provided")
         return Response({'status': 'FAIL', 'message': 'No token provided'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         # Use a transaction and lock the QR row to avoid race conditions
         with transaction.atomic():
+            # Select for update to lock the row
             qr_obj = QRCode.objects.select_for_update().get(token=token)
             employee = qr_obj.employee
 
             if qr_obj.is_used:
+                logger.info(f"validate_scan: Token {token} already used by {employee}")
                 # Record failed attempt (Duplicate)
                 Attendance.objects.create(
                     employee=employee,
@@ -230,6 +268,7 @@ def validate_scan(request):
                 return Response({'status': 'FAIL', 'message': 'QR Code already used'}, status=status.HTTP_400_BAD_REQUEST)
 
             if timezone.now() > qr_obj.expires_at:
+                logger.info(f"validate_scan: Token {token} expired for {employee}")
                 # Record failed attempt (Expired)
                 Attendance.objects.create(
                     employee=employee,
@@ -241,7 +280,7 @@ def validate_scan(request):
 
             # Success flow: mark used and save attendance
             qr_obj.is_used = True
-            qr_obj.save()
+            qr_obj.save(update_fields=['is_used']) # Explicitly update only this field
 
             Attendance.objects.create(
                 employee=employee,
@@ -249,6 +288,8 @@ def validate_scan(request):
                 status='SUCCESS',
                 note='Attendance recorded'
             )
+            
+            logger.info(f"validate_scan: Success for {employee} with token {token}")
 
             return Response({
                 'status': 'SUCCESS',
@@ -258,7 +299,8 @@ def validate_scan(request):
             })
 
     except QRCode.DoesNotExist:
-        # Unknown QR
+        logger.warning(f"validate_scan: Invalid token {token}")
         return Response({'status': 'FAIL', 'message': 'Invalid QR Token'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
+        logger.error(f"validate_scan: Error {str(e)}", exc_info=True)
         return Response({'status': 'ERROR', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

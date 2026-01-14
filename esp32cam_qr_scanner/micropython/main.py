@@ -17,14 +17,14 @@ import ujson
 
 # --- Configuration ---
 # WiFi Credentials - Ganti dengan kredensial Anda
-WIFI_SSID = "YOUR_WIFI_SSID"
-WIFI_PASS = "YOUR_WIFI_PASSWORD"
+WIFI_SSID = "Uban"
+WIFI_PASS = "cox12379"
 
 # Django Server URL - Ganti dengan IP address server Django Anda
 # Pastikan server Django Anda berjalan di network yang sama.
 # Gunakan `ip a` atau `ifconfig` di Linux/macOS, atau `ipconfig` di Windows
 # untuk menemukan IP address komputer Anda.
-SERVER_URL = "http://192.168.1.10:8000/api/attendance/"
+SERVER_URL = "http://192.168.68.140:8000/api/attendance/"
 
 # --- Pin Definition for AI-THINKER ESP32-CAM ---
 PIN_PWDN = -1
@@ -102,16 +102,18 @@ def scan_qr_code_from_image(img_buffer):
     # Logika di sini akan diganti. Contoh: mengirim `img_buffer` ke API.
     # Untuk tujuan demonstrasi, kita akan mengembalikan ID statis.
     time.sleep(1)
-    employee_id = "EMP-SIM-007"
-    print(f"Simulated QR Code found: {employee_id}")
-    return employee_id
+    # Simulasi token QR. Di sistem nyata, ini adalah string acak dari QR code.
+    qr_token = "TOKEN-SIMULASI-123"
+    print(f"Simulated QR Code found: {qr_token}")
+    return qr_token
 
-def send_attendance_to_server(employee_id):
+def send_attendance_to_server(qr_token):
     """Mengirim data absensi ke server Django."""
     headers = {'Content-Type': 'application/json'}
-    payload = {'employee_id': employee_id}
+    # Backend Django (views.py) mengharapkan key 'qr_token', bukan 'employee_id'
+    payload = {'qr_token': qr_token}
     
-    print(f"Sending attendance for '{employee_id}' to {SERVER_URL}...")
+    print(f"Sending attendance token '{qr_token}' to {SERVER_URL}...")
     
     try:
         response = urequests.post(SERVER_URL, data=ujson.dumps(payload), headers=headers)
@@ -146,11 +148,11 @@ def main_loop():
             if img:
                 print("Image captured. Scanning for QR code...")
                 # Pindai QR code dari gambar
-                employee_id = scan_qr_code_from_image(img)
+                qr_token = scan_qr_code_from_image(img)
                 
-                if employee_id:
+                if qr_token:
                     # Kirim data jika QR code ditemukan
-                    send_attendance_to_server(employee_id)
+                    send_attendance_to_server(qr_token)
                     print("Waiting for 5 seconds before next scan...")
                     time.sleep(5) # Jeda agar tidak spam server
                 else:

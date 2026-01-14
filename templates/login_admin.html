@@ -37,6 +37,7 @@
 
         <form method="POST" class="space-y-6">
           {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}">
           <div>
             <label
               for="username"

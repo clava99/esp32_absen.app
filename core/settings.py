@@ -22,9 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY: read secret and debug from environment variables
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-5%01wzd4dqv(h%=qy@zjv+90ae#r-t_r(5mu@$v!a(ywd!mq)m')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('1', 'false', 'yes')
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS','*').split(',')
 
 
 # Application definition
