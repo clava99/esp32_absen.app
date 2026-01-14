@@ -21,3 +21,4 @@ db.sqlite3-journal
 .DS_Store
 cookies.txt
 get-pip.py
+genv
